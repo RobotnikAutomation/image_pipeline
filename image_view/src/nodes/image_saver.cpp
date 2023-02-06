@@ -46,13 +46,13 @@
 
 boost::format g_format;
 bool save_all_image, save_image_service;
-std::string encoding, service_filename;
+std::string encoding, service_filename, folder_path;
 bool request_start_end;
 
 
 bool service(robotnik_msgs::SetString::Request &req, robotnik_msgs::SetString::Response &res) {
   save_image_service = true;
-  service_filename = req.data;
+  service_filename = req.data;    
 
   res.ret.success = true;
   res.ret.message = "Save request received correctly";
@@ -161,6 +161,11 @@ private:
 
     if (!image.empty()) {
       if ( save_image_service  && service_filename != "") {
+        if (folder_path != "")
+          service_filename = folder_path + "/" + service_filename;
+        else
+          service_filename = service_filename;
+
         filename = service_filename + ".jpg";
       } else {
         try {
@@ -172,6 +177,10 @@ private:
         try { 
           filename = (g_format % count_ % "jpg").str();
         } catch (...) { g_format.clear(); }
+
+        if (folder_path != ""){
+          filename = folder_path + "/" + filename;
+        }
       }
       
 
@@ -220,6 +229,7 @@ int main(int argc, char** argv)
   local_nh.param("encoding", encoding, std::string("bgr8"));
   local_nh.param("save_all_image", save_all_image, true);
   local_nh.param("request_start_end", request_start_end, false);
+  local_nh.param("folder_path", folder_path, std::string(""));
   g_format.parse(format_string);
   ros::ServiceServer save = local_nh.advertiseService ("save", service);
 
