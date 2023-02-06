@@ -42,14 +42,21 @@
 #include <std_srvs/Empty.h>
 #include <std_srvs/Trigger.h>
 
+#include <robotnik_msgs/SetString.h>
+
 boost::format g_format;
 bool save_all_image, save_image_service;
-std::string encoding;
+std::string encoding, service_filename;
 bool request_start_end;
 
 
-bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
+bool service(robotnik_msgs::SetString::Request &req, robotnik_msgs::SetString::Response &res) {
   save_image_service = true;
+  service_filename = req.data;
+
+  res.ret.success = true;
+  res.ret.message = "Save request received correctly";
+  
   return true;
 }
 
@@ -153,15 +160,20 @@ private:
     }
 
     if (!image.empty()) {
-      try {
+      if ( save_image_service  && service_filename != "") {
+        filename = service_filename + ".jpg";
+      } else {
+        try {
         filename = (g_format).str();
-      } catch (...) { g_format.clear(); }
-      try {
-        filename = (g_format % count_).str();
-      } catch (...) { g_format.clear(); }
-      try { 
-        filename = (g_format % count_ % "jpg").str();
-      } catch (...) { g_format.clear(); }
+        } catch (...) { g_format.clear(); }
+        try {
+          filename = (g_format % count_).str();
+        } catch (...) { g_format.clear(); }
+        try { 
+          filename = (g_format % count_ % "jpg").str();
+        } catch (...) { g_format.clear(); }
+      }
+      
 
       if ( save_all_image || save_image_service ) {
         cv::imwrite(filename, image);
